@@ -40,15 +40,15 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 
-
-
 #include "liblfds611.h"
+#include "liblfds700.h"
 
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "intertask_interface_dump.h"
 
 #include "memory_pools.h"
+// #define LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE
 
 /* Includes "intertask_interface_init.h" to check prototype coherence, but
    disable threads and messages information generation.
@@ -93,6 +93,7 @@ typedef struct message_list_s {
 
   message_number_t                        message_number;       ///< Unique message number
   uint32_t                                message_priority;     ///< Message priority
+  // struct lfds700_queue_element LFDS700_PAL_ALIGN( LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES ) qe;
 } message_list_t;
 
 typedef struct thread_desc_s {
@@ -150,6 +151,8 @@ typedef struct task_desc_s {
    * Queue of messages belonging to the task
    */
   struct lfds611_queue_state             *message_queue;
+  // struct lfds700_queue_state                 message_queue;
+  // struct lfds700_misc_prng_state LFDS700_PAL_ALIGN( LFDS700_PAL_CACHE_LINE_LENGTH_IN_BYTES ) ps;
 } task_desc_t;
 
 typedef struct itti_desc_s {
@@ -413,6 +416,7 @@ itti_send_msg_to_task (
     if (itti_desc.threads[destination_thread_id].task_state == TASK_STATE_ENDED) {
       ITTI_DEBUG (ITTI_DEBUG_ISSUES, " Message %s, number %lu with priority %d can not be sent from %s to queue (%u:%s), ended destination task!\n",
                   itti_desc.messages_info[message_id].name, message_number, priority, itti_get_task_name (origin_task_id), destination_task_id, itti_get_task_name (destination_task_id));
+      itti_free (origin_task_id, message); // In case of issues free the memory allocated for message
     } else {
       /*
        * We cannot send a message if the task is not running
@@ -430,10 +434,12 @@ itti_send_msg_to_task (
       new->msg = message;
       new->message_number = message_number;
       new->message_priority = priority;
+
       /*
        * Enqueue message in destination task queue
        */
       lfds611_queue_enqueue (itti_desc.tasks[destination_task_id].message_queue, new);
+      // lfds700_queue_enqueue (&(itti_desc.tasks[destination_task_id].message_queue), new, &itti_desc.tasks[destination_task_id].ps);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME (VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_ENQUEUE_MESSAGE, VCD_FUNCTION_OUT);
       {
         /*
@@ -600,6 +606,7 @@ itti_receive_msg_internal_event_fd (
       AssertFatal (read_ret == sizeof (sem_counter), "Read from task message FD (%d) failed (%d/%d)!\n", thread_id, (int)read_ret, (int)sizeof (sem_counter));
 
       if (lfds611_queue_dequeue (itti_desc.tasks[task_id].message_queue, (void **)&message) == 0) {
+      // if (lfds700_queue_dequeue (&itti_desc.tasks[task_id].message_queue, &message, &itti_desc.tasks[task_id].ps) == 0) {
         /*
          * No element in list -> this should not happen
          */
@@ -608,8 +615,14 @@ itti_receive_msg_internal_event_fd (
 
       AssertFatal (message != NULL, "Message from message queue is NULL!\n");
       *received_msg = message->msg;
-      result = itti_free (ITTI_MSG_ORIGIN_ID (*received_msg), message);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      // if (! *received_msg){
+        // result = itti_free (ITTI_MSG_ORIGIN_ID (*received_msg), message);
+        result = itti_free (ITTI_MSG_ORIGIN_ID (message->msg), message);
+        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+      // } else {
+        // FREE_CHECK(message); //freeing the first dummy message
+      // }
+
       /*
        * Mark that the event has been processed
        */
@@ -641,6 +654,7 @@ itti_poll_msg (
     struct message_list_s                  *message;
 
     if (lfds611_queue_dequeue (itti_desc.tasks[task_id].message_queue, (void **)&message) == 1) {
+    // if (lfds700_queue_dequeue (&itti_desc.tasks[task_id].message_queue, &message, &itti_desc.tasks[task_id].ps) == 1) {
       int                                     result;
 
       *received_msg = message->msg;
@@ -801,11 +815,12 @@ itti_init (
    * Allocates memory for tasks info
    */
   itti_desc.tasks = CALLOC_CHECK (itti_desc.task_max, sizeof (task_desc_t));
+
+  // lfds700_misc_library_init_valid_on_current_logical_core();
   /*
    * Allocates memory for threads info
    */
   itti_desc.threads = CALLOC_CHECK (itti_desc.thread_max, sizeof (thread_desc_t));
-
   /*
    * Initializing each queue and related stuff
    */
@@ -815,6 +830,26 @@ itti_init (
                 itti_desc.tasks_info[task_id].name,
                 itti_desc.tasks_info[task_id].parent_task != TASK_UNKNOWN ? " with parent " : "", itti_desc.tasks_info[task_id].parent_task != TASK_UNKNOWN ? itti_get_task_name (itti_desc.tasks_info[task_id].parent_task) : "");
     ITTI_DEBUG (ITTI_DEBUG_INIT, " Creating queue of message of size %u\n", itti_desc.tasks_info[task_id].queue_size);
+
+    // lfds700_misc_prng_init(&itti_desc.tasks[task_id].ps);
+    // message_list_t * message_p_dummy;
+    // message_list_t * msng;
+    // message_p_dummy = CALLOC_CHECK (1, sizeof (struct message_list_s));
+    // message_p_dummy = itti_malloc (task_id, TASK_UNKNOWN, sizeof (struct message_list_s));
+    // AssertFatal (message_p_dummy, "MALLOC_CHECK failed!\n");
+    // message_p_dummy->msg = CALLOC_CHECK (1, sizeof (MessageDef));
+    // message_p_dummy->msg = itti_alloc_new_message (task_id, MESSAGE_TEST);
+    // message_p_dummy->message_number = itti_increment_message_number ();
+    // message_p_dummy->message_priority = TASK_PRIORITY_MIN;
+    // lfds700_queue_init_valid_on_current_logical_core (&itti_desc.tasks[task_id].message_queue, message_p_dummy, &itti_desc.tasks[task_id].ps, NULL);
+    // AssertFatal (&itti_desc.tasks[task_id].message_queue != NULL, "&itti_desc.tasks[task_id].message_queue is NULL!\n");
+    // ret = 1;
+
+    // lfds700_queue_dequeue (&itti_desc.tasks[task_id].message_queue, &msng, &itti_desc.tasks[task_id].ps);
+
+    // FREE_CHECK(msng->msg);
+    // FREE_CHECK(msng);
+
     ret = lfds611_queue_new (&itti_desc.tasks[task_id].message_queue, itti_desc.tasks_info[task_id].queue_size);
 
     if (0 == ret) {
@@ -969,6 +1004,7 @@ itti_wait_tasks_end (
 #if ENABLE_ITTI_ANALYZER
   itti_dump_exit ();
 #endif
+  // lfds700_misc_library_cleanup();
 }
 
 void

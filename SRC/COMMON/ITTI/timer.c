@@ -44,7 +44,6 @@
 #include "queue.h"
 #include "dynamic_memory_check.h"
 
-
 int                                     timer_handle_signal (
   siginfo_t * info);
 
@@ -122,10 +121,10 @@ timer_handle_signal (
    */
   if (itti_send_msg_to_task (task_id, instance, message_p) < 0) {
     OAILOG_DEBUG (LOG_ITTI, "Failed to send msg TIMER_HAS_EXPIRED to task %u\n", task_id);
-    FREE_CHECK (message_p);
+    itti_free (TASK_TIMER, message_p);
+    // FREE_CHECK (message_p); // since message_p is allocated from memory pool it makes more sense to free it using itti_free
     return -1;
   }
-
   return 0;
 }
 
