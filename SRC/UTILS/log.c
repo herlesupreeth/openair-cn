@@ -538,7 +538,6 @@ log_flush_messages (
   int                                     rv = 0;
   int                                     rv_put = 0;
   log_queue_item_t                       *item_p = NULL;
-  struct lfds700_queue_element LFDS700_PAL_ALIGN(LFDS700_PAL_ATOMIC_ISOLATION_IN_BYTES) *qe;
 
   if (g_oai_log.log_fd) {
     // while ((rv = lfds611_queue_dequeue (g_oai_log.log_message_queue_p, (void **)&item_p)) == 1) {
@@ -784,7 +783,6 @@ log_message_start (
   int                                     filename_length = 0;
   log_thread_ctxt_t                      *thread_ctxt     = thread_ctxtP;
   hashtable_rc_t                          hash_rc         = HASH_TABLE_OK;
-  struct lfds700_stack_element            *se;
 
   if ((MIN_LOG_PROTOS > protoP) || (MAX_LOG_PROTOS <= protoP)) {
     return;
@@ -949,7 +947,6 @@ log_message (
   log_queue_item_t                       *new_item_p      = NULL;
   log_thread_ctxt_t                      *thread_ctxt     = thread_ctxtP;
   hashtable_rc_t                          hash_rc         = HASH_TABLE_OK;
-  struct lfds700_stack_element            *se;
 
   if ((MIN_LOG_PROTOS > protoP) || (MAX_LOG_PROTOS <= protoP)) {
     return;

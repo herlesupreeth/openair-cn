@@ -44,6 +44,7 @@
 #include "queue.h"
 #include "dynamic_memory_check.h"
 
+
 int                                     timer_handle_signal (
   siginfo_t * info);
 
@@ -125,6 +126,7 @@ timer_handle_signal (
     // FREE_CHECK (message_p); // since message_p is allocated from memory pool it makes more sense to free it using itti_free
     return -1;
   }
+
   return 0;
 }
 

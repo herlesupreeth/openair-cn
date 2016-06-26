@@ -52,7 +52,6 @@ extern int fd_g_debug_lvl;
 #include <stdbool.h>
 #include <pthread.h>
 
-
 typedef enum {
   MIN_LOG_ENV = 0,
   LOG_MME_ENV = MIN_LOG_ENV,

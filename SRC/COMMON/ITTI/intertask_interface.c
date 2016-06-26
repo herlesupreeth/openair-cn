@@ -40,6 +40,8 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 
+
+
 #include "liblfds611.h"
 #include "liblfds700.h"
 
@@ -434,7 +436,6 @@ itti_send_msg_to_task (
       new->msg = message;
       new->message_number = message_number;
       new->message_priority = priority;
-
       /*
        * Enqueue message in destination task queue
        */
@@ -821,6 +822,7 @@ itti_init (
    * Allocates memory for threads info
    */
   itti_desc.threads = CALLOC_CHECK (itti_desc.thread_max, sizeof (thread_desc_t));
+
   /*
    * Initializing each queue and related stuff
    */
