@@ -2,9 +2,9 @@
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under 
+ * The OpenAirInterface Software Alliance licenses this file to You under
  * the Apache License, Version 2.0  (the "License"); you may not use this file
- * except in compliance with the License.  
+ * except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -482,6 +482,16 @@ spgw_config_init (
                 spgw_system (system_cmd, SPGW_WARN_ON_ERROR, __FILE__, __LINE__);
               } else {
                 OAILOG_ERROR (LOG_SPGW_APP, "Route for UEs\n");
+              }
+
+              if (snprintf (system_cmd, 256,
+                            "iptables -t mangle -A OUTPUT -o %s -p tcp -m tcp --tcp-flags SYN,RST SYN -s %s/%s -m tcpmss --mss 1361:1600 -j TCPMSS --set-mss 1360",
+                            config_pP->pgw_config.ipv4.pgw_interface_name_for_SGI,
+                            astring, atoken2) > 0) {
+                OAILOG_INFO (LOG_SPGW_APP, "MSS iptables: %s\n", system_cmd);
+                spgw_system (system_cmd, SPGW_ABORT_ON_ERROR, __FILE__, __LINE__);
+              } else {
+                OAILOG_ERROR (LOG_SPGW_APP, "MSS iptables\n");
               }
 
               if ((prefix_mask >= 2) && (prefix_mask < 32)) {
