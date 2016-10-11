@@ -2,9 +2,9 @@
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under 
+ * The OpenAirInterface Software Alliance licenses this file to You under
  * the Apache License, Version 2.0  (the "License"); you may not use this file
- * except in compliance with the License.  
+ * except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -182,7 +182,8 @@ emm_send_attach_accept (
    * Mandatory - EPS attach result
    */
   size += EPS_ATTACH_RESULT_MAXIMUM_LENGTH;
-  emm_msg->epsattachresult = EPS_ATTACH_RESULT_EPS_IMSI;
+  emm_msg->epsattachresult = EPS_ATTACH_RESULT_EPS_IMSI; // For OAI
+  // emm_msg->epsattachresult = EPS_ATTACH_RESULT_EPS; // For srsUE
   /*
    * Mandatory - T3412 value
    */
