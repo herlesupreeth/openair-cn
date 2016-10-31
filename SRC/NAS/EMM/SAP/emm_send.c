@@ -784,6 +784,12 @@ emm_send_security_mode_command (
   emm_msg->replayeduesecuritycapabilities.uea = msg->uea;
   emm_msg->replayeduesecuritycapabilities.uia = msg->uia;
   emm_msg->replayeduesecuritycapabilities.gea = msg->gea;
+
+  emm_msg->presencemask = 0;
+  emm_msg->presencemask |= SECURITY_MODE_COMMAND_IMEISV_REQUEST_PRESENT;
+
+  size += IMEISV_REQUEST_MAXIMUM_LENGTH;
+  emm_msg->imeisvrequest = 1;
   OAILOG_FUNC_RETURN (LOG_NAS_EMM, size);
 }
 
