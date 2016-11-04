@@ -1005,6 +1005,45 @@ _emm_attach_identify (
      */
     rc = mme_api_identify_guti (emm_ctx->guti, &emm_ctx->vector);
 
+    if (rc == RETURNerror) {
+      /*
+       * Release the old GUTI
+       */
+      if (emm_ctx->old_guti) {
+        FREE_CHECK (emm_ctx->old_guti);
+      }
+      /*
+       * Save the GUTI previously used by the UE to identify itself
+       */
+      emm_ctx->old_guti = emm_ctx->guti;
+      /*
+       * Allocate a new GUTI
+       */
+      emm_ctx->guti = (guti_t *) MALLOC_CHECK (sizeof (guti_t));
+      /*
+       * Fill the new GUTI
+       */
+      emm_ctx->guti->gummei.plmn.mcc_digit1 = _emm_data.conf.tai_list.tai[0].plmn.mcc_digit1;
+      emm_ctx->guti->gummei.plmn.mcc_digit2 = _emm_data.conf.tai_list.tai[0].plmn.mcc_digit2;
+      emm_ctx->guti->gummei.plmn.mcc_digit3 = _emm_data.conf.tai_list.tai[0].plmn.mcc_digit3;
+      emm_ctx->guti->gummei.plmn.mnc_digit1 = _emm_data.conf.tai_list.tai[0].plmn.mnc_digit1;
+      emm_ctx->guti->gummei.plmn.mnc_digit2 = _emm_data.conf.tai_list.tai[0].plmn.mnc_digit2;
+      emm_ctx->guti->gummei.plmn.mnc_digit3 = _emm_data.conf.tai_list.tai[0].plmn.mnc_digit3;
+      emm_ctx->guti->gummei.mme_code = mme_config.gummei.mmec[0];
+      emm_ctx->guti->gummei.mme_gid = mme_config.gummei.mme_gid[0];
+      emm_ctx->guti->m_tmsi = (uintptr_t)emm_ctx;
+      /*
+       * Update the GUTI indicator as new
+       */
+      emm_ctx->guti_is_new = true;
+      if (emm_ctx->old_guti) {
+        unsigned int emm_ue_id, *emm_ue_id_p;
+        emm_ue_id_p = &emm_ue_id;
+        obj_hashtable_ts_remove (_emm_data.ctx_coll_guti, (const void *)(emm_ctx->old_guti), sizeof (*emm_ctx->old_guti), (void **)&emm_ue_id_p);
+      }
+      obj_hashtable_ts_insert (_emm_data.ctx_coll_guti, (const void *const)(emm_ctx->guti), sizeof (*emm_ctx->guti), (void *)((uintptr_t)emm_ctx->ue_id));
+    }
+
 //#pragma message  "LG Temp. Force identification here"
     //LG Force identification here if (rc != RETURNok) {
       OAILOG_WARNING (LOG_NAS_EMM, "EMM-PROC  - Failed to identify the UE using provided GUTI (tmsi=%u)\n", emm_ctx->guti->m_tmsi);

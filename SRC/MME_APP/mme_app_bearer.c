@@ -2,9 +2,9 @@
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
- * The OpenAirInterface Software Alliance licenses this file to You under 
+ * The OpenAirInterface Software Alliance licenses this file to You under
  * the Apache License, Version 2.0  (the "License"); you may not use this file
- * except in compliance with the License.  
+ * except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
@@ -484,10 +484,16 @@ mme_app_handle_initial_ue_message (
   message_p->ittiMsg.nas_initial_ue_message.nas.cgi             = initial_pP->cgi;
   message_p->ittiMsg.nas_initial_ue_message.nas.as_cause        = initial_pP->as_cause;
   if (initial_pP->is_s_tmsi_valid) {
-    message_p->ittiMsg.nas_initial_ue_message.nas.s_tmsi          = initial_pP->opt_s_tmsi;
+    message_p->ittiMsg.nas_initial_ue_message.nas.s_tmsi        = initial_pP->opt_s_tmsi;
+
+    ue_context_p->guti.m_tmsi                                   = initial_pP->opt_s_tmsi.m_tmsi;
+    ue_context_p->guti.gummei.mme_code                          = initial_pP->opt_s_tmsi.mme_code;
   } else {
     message_p->ittiMsg.nas_initial_ue_message.nas.s_tmsi.mme_code = 0;
     message_p->ittiMsg.nas_initial_ue_message.nas.s_tmsi.m_tmsi   = INVALID_M_TMSI;
+  }
+  if (initial_pP->is_gummei_valid) {
+    memcpy(&ue_context_p->guti.gummei, (const void*)&initial_pP->opt_gummei, sizeof(initial_pP->opt_gummei));
   }
   message_p->ittiMsg.nas_initial_ue_message.nas.initial_nas_msg.data   =  initial_pP->nas.data;
   message_p->ittiMsg.nas_initial_ue_message.nas.initial_nas_msg.length =  initial_pP->nas.length;
